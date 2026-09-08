@@ -74,15 +74,22 @@ function App() {
         }
 
         setTelegramId(tgUser.id);
-        API.initUser({
-          id: tgUser.telegram_id || tgUser.id,
-          username: tgUser.username || '',
-          first_name: tgUser.first_name || 'Гость',
-          last_name: tgUser.last_name || ''
-        });
+        try {
+          await API.initUser({
+            id: tgUser.telegram_id || tgUser.id,
+            username: tgUser.username || '',
+            first_name: tgUser.first_name || 'Гость',
+            last_name: tgUser.last_name || ''
+          });
+        } catch (e) {
+          console.warn('Init user failed:', e.message);
+        }
       } catch (e) {
         console.error('Init error:', e);
         setTelegramId(999999);
+        try {
+          await API.initUser({ id: 999999, username: '', first_name: 'Гость', last_name: '' });
+        } catch (_) {}
       } finally {
         setLoading(false);
         setSplashDone(true);

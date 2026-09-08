@@ -25,7 +25,7 @@ router.get('/:telegramId', (req, res) => {
 router.get('/:telegramId/search', (req, res) => {
     try {
         const user = userService.getUserByTelegramId(req.params.telegramId);
-        if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+        if (!user) return res.json({ success: true, data: [] });
 
         const { q } = req.query;
         if (!q) return res.json({ success: true, data: [] });

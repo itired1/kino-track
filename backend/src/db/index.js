@@ -5,8 +5,15 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-// Путь к файлу базы данных
-const DB_PATH = path.join(__dirname, '../../kino.db');
+// Путь к файлу базы данных.
+// На проде (Render) задаётся env DB_PATH (например, /var/data/kino.db) —
+// так данные сохраняются между редеплоями на подключённом диске.
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../kino.db');
+
+if (DB_PATH !== ':memory:') {
+    const fs = require('fs');
+    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+}
 
 // Создаём подключение
 const db = new Database(DB_PATH);
