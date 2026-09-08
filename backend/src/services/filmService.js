@@ -156,5 +156,6 @@ module.exports = {
     getFilmByKinopoiskId,
     cacheFilm,
     searchFilms,
-    getUnratedFilms
+    getUnratedFilms,
+    formatFilm
 };
