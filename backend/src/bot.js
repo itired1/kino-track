@@ -5,8 +5,9 @@
 
 const TelegramBot = require('node-telegram-bot-api');
 
-// URL веб-приложения (настраивается через env WEB_APP_URL)
-const WEB_APP_URL = process.env.WEB_APP_URL || process.env.FRONTEND_URL || 'https://your-frontend-url.com';
+// URL веб-приложения (настраивается через env WEB_APP_URL).
+// Дефолт — актуальный прод-адрес, чтобы кнопка работала даже без env.
+const WEB_APP_URL = process.env.WEB_APP_URL || process.env.FRONTEND_URL || 'https://kino-track-1.onrender.com';
 const BOT_ENABLED = process.env.BOT_ENABLED !== 'false';
 
 let bot = null;
@@ -20,6 +21,13 @@ function startBot() {
 
     try {
         bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+        bot.setChatMenuButton({
+            menu_button: {
+                type: 'web_app',
+                text: 'Открыть KinoTrack',
+                web_app: { url: WEB_APP_URL }
+            }
+        }).catch(err => console.warn('🤖 Не удалось обновить кнопку меню:', err.message));
     } catch (e) {
         console.error('🤖 Ошибка запуска бота:', e.message);
         return;
