@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Film, Eye, Bookmark, XCircle, Share2, Link2, Check, MessageSquarePlus, MessageSquare, Trash2 } from 'lucide-react';
+import { ArrowLeft, Star, Film, Eye, Bookmark, XCircle, Share2, Link2, Check, MessageSquarePlus, MessageSquare, Trash2, Library, Plus, X } from 'lucide-react';
 import API from '../api';
 import toast from 'react-hot-toast';
 import { FilmDetailSkeleton } from './Skeletons';
@@ -43,6 +43,64 @@ function FilmDetail({ telegramId }) {
   const [newReviewRating, setNewReviewRating] = useState(null);
   const [newReviewSpoiler, setNewReviewSpoiler] = useState(false);
   const [showNewReview, setShowNewReview] = useState(false);
+  const [showShelfPicker, setShowShelfPicker] = useState(false);
+  const [collections, setCollections] = useState([]);
+  const [shelvesLoading, setShelvesLoading] = useState(false);
+  const [newShelfName, setNewShelfName] = useState('');
+
+  async function loadCollections() {
+    try {
+      setShelvesLoading(true);
+      const res = await API.getCollections(telegramId);
+      setCollections(res.data || []);
+    } catch (e) {
+      // тихо
+    } finally {
+      setShelvesLoading(false);
+    }
+  }
+
+  async function openShelfPicker() {
+    setShowShelfPicker(true);
+    setNewShelfName('');
+    await loadCollections();
+  }
+
+  async function addToShelf(collection) {
+    try {
+      const res = await API.addToCollection(collection.id, film.kinopoisk_id);
+      if (res.success) {
+        toast.success(`Добавлено: «${collection.name}»`);
+        loadCollections();
+      } else {
+        toast.error(res.error || 'Ошибка');
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Ошибка');
+    }
+  }
+
+  async function createShelf() {
+    const name = newShelfName.trim();
+    if (!name) {
+      toast.error('Введите название полки');
+      return;
+    }
+    try {
+      const res = await API.createCollection(telegramId, name);
+      if (res.success) {
+        toast.success('Полка создана! Сейчас добавим фильм');
+        const collId = res.id;
+        await API.addToCollection(collId, film.kinopoisk_id);
+        loadCollections();
+        setNewShelfName('');
+      } else {
+        toast.error(res.error || 'Ошибка');
+      }
+    } catch (e) {
+      toast.error('Ошибка создания');
+    }
+  }
 
   useEffect(() => {
     loadFilm();
@@ -311,7 +369,92 @@ function FilmDetail({ telegramId }) {
           >
             <Link2 size={16} /> Ссылка
           </button>
+          <button
+            onClick={openShelfPicker}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '12px 20px', background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+              borderRadius: '12px', color: 'var(--text-primary)', fontSize: '14px', cursor: 'pointer'
+            }}
+          >
+            <Library size={16} /> В полку
+          </button>
         </div>
+
+        {/* Модалка выбора полки */}
+        {showShelfPicker && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+          }} onClick={() => setShowShelfPicker(false)}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--bg-primary)', width: '100%', maxWidth: '600px',
+                borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
+                padding: '20px 16px calc(24px + env(safe-area-inset-bottom))',
+                animation: 'splashIn 0.3s ease'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '17px', margin: 0 }}><Library size={18} /> Полки</h3>
+                <button onClick={() => setShowShelfPicker(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <input
+                  value={newShelfName}
+                  onChange={(e) => setNewShelfName(e.target.value)}
+                  placeholder="Название новой полки..."
+                  style={{
+                    flex: 1, padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                    borderRadius: '12px', color: 'var(--text-primary)', fontSize: '14px', outline: 'none'
+                  }}
+                />
+                <button
+                  onClick={createShelf}
+                  style={{
+                    padding: '0 16px', background: 'var(--accent)', border: 'none', borderRadius: '12px',
+                    color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px'
+                  }}
+                >
+                  <Plus size={16} /> Создать
+                </button>
+              </div>
+
+              {shelvesLoading ? (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Загрузка...</p>
+              ) : collections.length === 0 ? (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Полок пока нет — создайте первую!</p>
+              ) : (
+                <div>
+                  {collections.map(c => {
+                    const alreadyAdded = c.films.some(f => String(f.kinopoisk_id) === String(film.kinopoisk_id));
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => !alreadyAdded && addToShelf(c)}
+                        disabled={alreadyAdded}
+                        style={{
+                          width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: '8px',
+                          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                          borderRadius: '12px', cursor: alreadyAdded ? 'default' : 'pointer',
+                          color: 'var(--text-primary)', fontSize: '14px', display: 'flex',
+                          alignItems: 'center', justifyContent: 'space-between'
+                        }}
+                      >
+                        <span>{c.name} <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>({c.count})</span></span>
+                        {alreadyAdded && <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}><Check size={14} /> В полке</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Рецензии */}
         <div style={{ marginTop: '24px' }}>

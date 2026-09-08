@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Film, Calendar, Star, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Film, Calendar, Star, X, Shuffle } from 'lucide-react';
 import API from '../api';
 import toast from 'react-hot-toast';
 import { FilmListSkeleton } from '../components/Skeletons';
@@ -11,6 +11,8 @@ function SearchPage({ telegramId }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [randomizing, setRandomizing] = useState(false);
+  const navigate = useNavigate();
 
   async function handleSearch(e) {
     e.preventDefault();
@@ -39,6 +41,22 @@ function SearchPage({ telegramId }) {
     setYear('');
     setResults([]);
     setSearched(false);
+  }
+
+  async function handleRandom() {
+    setRandomizing(true);
+    try {
+      const res = await API.getRandomFilm();
+      if (res.success && res.data) {
+        navigate(`/film/${res.data.id}`);
+      } else {
+        toast.error('Не удалось найти фильм');
+      }
+    } catch (error) {
+      toast.error('Ошибка: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setRandomizing(false);
+    }
   }
 
   return (
@@ -74,6 +92,19 @@ function SearchPage({ telegramId }) {
             )}
           </button>
         </form>
+        <button
+          onClick={handleRandom}
+          disabled={randomizing}
+          style={{
+            marginTop: '10px', width: '100%', padding: '12px', borderRadius: '12px',
+            border: '1px dashed var(--accent)', background: 'transparent', color: 'var(--accent)',
+            fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', gap: '8px'
+          }}
+        >
+          <Shuffle size={16} />
+          {randomizing ? 'Подбираем фильм...' : 'Что посмотреть? Случайный фильм'}
+        </button>
       </div>
 
       {loading && <FilmListSkeleton count={4} />}

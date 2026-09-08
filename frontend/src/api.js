@@ -147,5 +147,48 @@ export default {
   async deleteReview(id) {
     const response = await api.delete(`/reviews/${id}`);
     return response.data;
+  },
+
+  // === Случайный фильм ===
+  async getRandomFilm() {
+    const response = await api.get('/search/random');
+    return response.data;
+  },
+
+  // === Рейтинг друзей ===
+  async getLeaderboard(telegramId) {
+    const response = await api.get(`/friends/${telegramId}/leaderboard`);
+    return response.data;
+  },
+
+  // === Полки ===
+  async getCollections(telegramId) {
+    const response = await api.get(`/collections/${telegramId}`);
+    return response.data;
+  },
+
+  async getUserCollections(otherTelegramId) {
+    const response = await api.get(`/collections/user/${otherTelegramId}`);
+    return response.data;
+  },
+
+  async createCollection(telegramId, name) {
+    const response = await api.post('/collections', { telegram_id: telegramId, name });
+    return response.data;
+  },
+
+  async addToCollection(collectionId, filmId) {
+    const response = await api.post(`/collections/${collectionId}/films`, { film_id: filmId });
+    return response.data;
+  },
+
+  async removeFromCollection(collectionId, filmId) {
+    const response = await api.delete(`/collections/${collectionId}/films/${filmId}`);
+    return response.data;
+  },
+
+  async deleteCollection(collectionId) {
+    const response = await api.delete(`/collections/${collectionId}`);
+    return response.data;
   }
 };

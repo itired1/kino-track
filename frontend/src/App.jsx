@@ -21,7 +21,15 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
+  const [theme, setTheme] = useState(() => localStorage.getItem('kino_theme') || 'dark');
   const location = useLocation();
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('kino_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
 
   useEffect(() => {
     const init = async () => {
@@ -94,7 +102,7 @@ function App() {
           <Route path="/search" element={<AnimatedPage key={location.pathname}><SearchPage telegramId={telegramId} /></AnimatedPage>} />
           <Route path="/recommendations" element={<AnimatedPage key={location.pathname}><RecommendationsPage telegramId={telegramId} /></AnimatedPage>} />
           <Route path="/friends" element={<AnimatedPage key={location.pathname}><FriendsPage telegramId={telegramId} /></AnimatedPage>} />
-          <Route path="/profile" element={<AnimatedPage key={location.pathname}><ProfilePage telegramId={telegramId} userInfo={userInfo} /></AnimatedPage>} />
+          <Route path="/profile" element={<AnimatedPage key={location.pathname}><ProfilePage telegramId={telegramId} userInfo={userInfo} theme={theme} onToggleTheme={toggleTheme} /></AnimatedPage>} />
           <Route path="/history" element={<AnimatedPage key={location.pathname}><HistoryPage telegramId={telegramId} /></AnimatedPage>} />
           <Route path="/film/:id" element={<AnimatedPage key={location.pathname}><FilmDetail telegramId={telegramId} /></AnimatedPage>} />
         </Routes>

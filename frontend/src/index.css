@@ -17,6 +17,40 @@
   --rating-star: #ffc107;
 }
 
+/* Светлая тема */
+[data-theme='light'] {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #ebebeb;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --accent: #e64a00;
+  --accent-hover: #cc4500;
+  --success: #2e7d32;
+  --warning: #e65100;
+  --error: #c62828;
+  --border: #dddddd;
+  --rating-star: #ff9800;
+}
+
+[data-theme='light'] body {
+  background-color: var(--bg-primary);
+}
+
+[data-theme='light'] .splash-screen {
+  background: #f5f5f5;
+}
+
+[data-theme='light'] .splash-logo {
+  background: #ffffff;
+  border: 1px solid #dddddd;
+}
+
+[data-theme='light'] .recommendation-reason {
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  color: #ddd;
+}
+
 * {
   margin: 0;
   padding: 0;

@@ -86,6 +86,109 @@ function getRecentRatings(userId, limit = 10) {
     }));
 }
 
+// Статистика по времени и жанрам (для тёмной статистики)
+function getExtendedStats(userId) {
+    const ratings = db.prepare(`
+        SELECT ur.rating, ur.status, ur.created_at, f.duration, f.year, f.genres, f.name_ru, f.kinopoisk_id
+        FROM user_ratings ur
+        JOIN films f ON ur.film_id = f.id
+        WHERE ur.user_id = ?
+    `).all(userId);
+
+    let watchHours = 0;
+    const genreCount = {};
+    const yearRanges = {};
+
+    ratings.forEach(r => {
+        const hours = (r.duration || 0) / 60;
+        watchHours += hours;
+
+        const year = r.year || null;
+        let bucket = 'Неизвестно';
+        if (year) {
+            if (year < 1970) bucket = 'До 1970-х';
+            else if (year < 1980) bucket = '1970-е';
+            else if (year < 1990) bucket = '1980-е';
+            else if (year < 2000) bucket = '1990-е';
+            else if (year < 2005) bucket = '2000-е';
+            else if (year < 2010) bucket = '2005–2009';
+            else if (year < 2015) bucket = '2010–2014';
+            else if (year < 2020) bucket = '2015–2019';
+            else if (year < 2023) bucket = '2020–2022';
+            else bucket = 'Современные';
+        }
+        yearRanges[bucket] = (yearRanges[bucket] || 0) + 1;
+
+        (parseJsonArray(r.genres) || []).forEach(g => {
+            if (!genreCount[g]) genreCount[g] = { count: 0, sum: 0 };
+            genreCount[g].count++;
+            genreCount[g].sum += r.rating;
+        });
+    });
+
+    const topGenresExtended = Object.entries(genreCount)
+        .map(([genre, d]) => ({
+            genre,
+            count: d.count,
+            avg_rating: d.sum > 0 ? Math.round((d.sum / d.count) * 10) / 10 : 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+
+    return {
+        watch_hours: Math.round(watchHours * 10) / 10,
+        top_genres: topGenresExtended,
+        years: Object.entries(yearRanges).map(([range, count]) => ({ range, count }))
+    };
+}
+
+// Бейджи пользователя
+function getBadges(userId) {
+    const stats = getUserStats(userId);
+    const badges = [];
+
+    const reviewsCount = db.prepare('SELECT COUNT(*) as c FROM film_reviews WHERE user_id = ?').get(userId).c;
+    const watchlistCount = Number(stats.watchlist_count || 0);
+    const totalRatings = Number(stats.total_ratings || 0);
+    const averageRating = Number(stats.average_rating || 0);
+
+    // Кинокритик — написал 5+ рецензий
+    if (reviewsCount >= 5) {
+        badges.push({ id: 'critic', name: 'Кинокритик', icon: '🎬', description: 'Написал 5+ рецензий' });
+    }
+
+    // Первопроходец — добавил 3+ фильма сегодня
+    const pioneerCount = db.prepare(`
+        SELECT COUNT(*) as c FROM user_ratings
+        WHERE user_id = ? AND date(created_at) = date('now')
+    `).get(userId).c;
+    if (pioneerCount >= 3) {
+        badges.push({ id: 'pioneer', name: 'Первопроходец', icon: '🚀', description: '3+ оценки сегодня' });
+    }
+
+    // Марафонец — 30+ оценок
+    if (totalRatings >= 30) {
+        badges.push({ id: 'marathoner', name: 'Марафонец', icon: '🏃', description: '30+ просмотренных фильмов' });
+    }
+
+    // Киноман — 50+ оценок
+    if (totalRatings >= 50) {
+        badges.push({ id: 'cinephile', name: 'Киноман', icon: '🎥', description: '50+ просмотренных фильмов' });
+    }
+
+    // Гурман — оценка выше 8
+    if (averageRating >= 8) {
+        badges.push({ id: 'gourmet', name: 'Гурман', icon: '🍿', description: 'Средняя оценка 8+' });
+    }
+
+    // Библиотекарь — 10+ в ожидании
+    if (watchlistCount >= 10) {
+        badges.push({ id: 'librarian', name: 'Библиотекарь', icon: '📚', description: '10+ фильмов в списке ожидания' });
+    }
+
+    return badges;
+}
+
 // Топ жанров
 function getTopGenres(userId, limit = 3) {
     const rows = db.prepare(`
@@ -278,5 +381,7 @@ module.exports = {
     addFriend,
     removeFriend,
     getFriends,
-    searchUsers
+    searchUsers,
+    getExtendedStats,
+    getBadges
 };

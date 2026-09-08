@@ -37,6 +37,19 @@ router.get('/popular', async (req, res) => {
     }
 });
 
+// Случайный фильм
+router.get('/random', async (req, res) => {
+    try {
+        const film = await kinopoisk.getRandom();
+        if (!film) return res.status(404).json({ error: 'Не удалось найти фильм' });
+        const cached = filmService.cacheFilm(film);
+        res.json({ success: true, data: cached });
+    } catch (error) {
+        console.error('Random error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Поиск фильмов
 router.post('/', async (req, res) => {
     try {

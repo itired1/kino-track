@@ -107,4 +107,52 @@ router.get('/:telegramId/:friendTelegramId/profile', (req, res) => {
     }
 });
 
+// Рейтинг друзей (топ-лист по количеству оценок и средней оценке)
+router.get('/:telegramId/leaderboard', (req, res) => {
+    try {
+        const me = userService.getUserByTelegramId(req.params.telegramId);
+        if (!me) return res.json({ success: true, data: [] });
+
+        const friends = userService.getFriends(me.id);
+        const myStats = userService.getUserStats(me.id);
+
+        // Собираем всех (себя + друзей) с данными
+        const entries = [
+            {
+                user: { id: me.id, telegram_id: me.telegram_id, username: me.username, first_name: me.first_name, last_name: me.last_name },
+                is_me: true,
+                total_ratings: Number(myStats.total_ratings || 0),
+                average_rating: Number(myStats.average_rating || 0),
+                watching_count: Number(myStats.watching_count || 0)
+            },
+            ...friends.map(f => ({
+                user: {
+                    id: f.id, telegram_id: f.telegram_id, username: f.username,
+                    first_name: f.first_name, last_name: f.last_name
+                },
+                is_me: false,
+                total_ratings: Number(f.total_ratings || 0),
+                average_rating: Number(f.average_rating || 0),
+                watching_count: Number(f.watching_count || 0)
+            }))
+        ];
+
+        // Сорт by оценок
+        const byRatings = [...entries].sort((a, b) => b.total_ratings - a.total_ratings);;
+        const byAverage = [...entries].filter(e => e.total_ratings > 0).sort((a, b) => b.average_rating - a.average_rating);
+
+        res.json({
+            success: true,
+            data: {
+                by_ratings: byRatings,
+                by_average: byAverage,
+                total_friends: friends.length
+            }
+        });
+    } catch (error) {
+        console.error('Leaderboard error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

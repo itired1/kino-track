@@ -70,10 +70,12 @@ router.get('/:telegramId/profile', (req, res) => {
             actors: userService.getTopActors(user.id)
         };
         const recentRatings = userService.getRecentRatings(user.id, 5);
+        const extendedStats = userService.getExtendedStats(user.id);
+        const badges = userService.getBadges(user.id);
 
         res.json({
             success: true,
-            data: { user, stats, ratingDistribution, favorites, recentRatings }
+            data: { user, stats, ratingDistribution, favorites, recentRatings, extendedStats, badges }
         });
     } catch (error) {
         console.error('Profile error:', error.message);

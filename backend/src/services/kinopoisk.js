@@ -154,4 +154,31 @@ async function getPopular(limit = 10) {
     return detailed;
 }
 
-module.exports = { searchFilms, getFilmById, getReleases, getPopular };
+// Случайный фильм (для кнопки «Что посмотреть?»)
+async function getRandom() {
+    // Случайная страница 1-50, сортировка по популярности, затем берём случайный из списка
+    // Демо-тариф: доступны страницы 1-10, поэтому выбираем из них
+    const page = Math.floor(Math.random() * 8) + 1;
+    const response = await api.get('/movie', {
+        params: {
+            page,
+            limit: 25,
+            sortField: 'rating.kp',
+            sortType: '-1',
+            'rating.kp': '6-10',
+            type: 'movie'
+        }
+    });
+
+    const docs = (response.data.docs || []).filter(d => d.poster?.url || d.poster?.previewUrl);
+    if (docs.length === 0) return null;
+
+    const pick = docs[Math.floor(Math.random() * docs.length)];
+    try {
+        return await getFilmById(pick.id);
+    } catch (e) {
+        return formatSearchResult(pick);
+    }
+}
+
+module.exports = { searchFilms, getFilmById, getReleases, getPopular, getRandom };
