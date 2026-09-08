@@ -1,0 +1,53 @@
+# Зависимости
+node_modules/
+.pnp
+.pnp.js
+
+# Тесты
+coverage/
+
+# Продакшен сборка
+dist/
+build/
+
+# Переменные окружения
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# Редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ОС
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Telegram
+.tgignore
+
+# База данных
+*.sql.backup
+postgres-data/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+backend/kino.db*
+
+# Инструменты (не коммитим бинарники)
+cloudflared.exe
+*.exe

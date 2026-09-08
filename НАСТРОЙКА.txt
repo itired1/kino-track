@@ -1,0 +1,85 @@
+# ============================================
+# 🎬 НАСТРОЙКА KINOPOLILBOT
+# ============================================
+
+## ✅ Всё настроено! Ваши данные:
+
+┌─────────────────────────────────────────────┐
+│  Бот Telegram:  @kinopoisklilbot           │
+│  Token:         8623644777:AAH...6qsA2CU   │
+│  API Key:       KR02M90-3EQMXMS-KKH4CS9... │
+└─────────────────────────────────────────────┘
+
+## 🚀 ЗАПУСК (3 шага):
+
+### Шаг 1: Установка зависимостей
+Откройте PowerShell в этой папке и выполните:
+    .\setup.ps1
+
+Или вручную:
+    cd backend
+    npm install
+    
+    cd ..\frontend
+    npm install
+
+### Шаг 2: Создание базы данных
+    createdb kino_app
+    psql -d kino_app -f database\schema.sql
+
+Или через Docker:
+    docker-compose up -d postgres
+
+### Шаг 3: Запуск приложения
+    .\start.ps1
+
+Или вручную в двух терминалах:
+    # Терминал 1
+    cd backend
+    npm run dev
+    
+    # Терминал 2
+    cd frontend
+    npm run dev
+
+## 📱 Настройка бота в Telegram:
+
+1. Откройте @BotFather
+2. Отправьте: /mybots
+3. Выберите: kinopoisklilbot
+4. Bot Settings → Menu Button → Configure
+5. Отправьте URL: http://localhost:5173
+
+## 🌐 После деплоя:
+
+Обновите URL в @BotFather на ваш продакшен URL:
+    https://your-domain.com
+
+И в backend/.env:
+    FRONTEND_URL=https://your-domain.com
+    WEB_APP_URL=https://your-domain.com
+
+## 🔗 Полезные ссылки:
+
+    Фронтенд:  http://localhost:5173
+    Бэкенд:    http://localhost:3000
+    Health:    http://localhost:3000/api/health
+    
+    Бот:       https://t.me/kinopoisklilbot
+
+## ⚠️ Важно:
+
+• Не публикуйте .env файлы в Git
+• Смените пароль БД для продакшена
+• Используйте HTTPS на продакшене
+• Kinopoisk API имеет лимиты (бесплатно ~3000/день)
+
+## 📞 Если что-то не работает:
+
+1. Проверьте что PostgreSQL запущен
+2. Проверьте переменные в backend/.env
+3. Посмотрите логи: docker-compose logs -f
+4. Убедитесь что порты 3000 и 5173 свободны
+
+============================================
+Удачи! 🎬
