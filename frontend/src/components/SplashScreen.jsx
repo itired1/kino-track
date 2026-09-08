@@ -4,7 +4,6 @@ import { Clapperboard } from 'lucide-react';
 // Экран загрузки (сплэш) приложения
 function SplashScreen({ done }) {
   const [progress, setProgress] = useState(0);
-  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     // Анимация прогресса загрузки — плавная и не слишком быстрая
@@ -20,17 +19,8 @@ function SplashScreen({ done }) {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Когда загрузка завершена — плавно скрываем
-    if (done) {
-      setTimeout(() => setFadeOut(true), 200);
-    }
-  }, [done]);
-
-  if (fadeOut) return null;
-
   return (
-    <div className="splash-screen">
+    <div className={`splash-screen ${done ? 'splash-hide' : ''}`}>
       <div className="splash-content">
         <div className="splash-logo">
           <Clapperboard size={56} strokeWidth={1.5} color="#f50" />

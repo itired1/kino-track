@@ -19,12 +19,13 @@ function App() {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const init = async () => {
-      // Показываем сплэш минимум 4.5 секунды
-      await new Promise(r => setTimeout(r, 4500));
+      // Показываем сплэш минимум 6 секунд
+      await new Promise(r => setTimeout(r, 6000));
 
       try {
         // Пытаемся получить initData из Telegram
@@ -76,13 +77,15 @@ function App() {
       } finally {
         setLoading(false);
         setSplashDone(true);
+        // Даём сплэшу 700мс на fade-out, затем показываем приложение
+        setTimeout(() => setSplashVisible(false), 700);
       }
     };
 
     init();
   }, []);
 
-  if (splashDone && !loading) {
+  if (!splashVisible) {
     return (
       <div className="app">
         <Routes>
