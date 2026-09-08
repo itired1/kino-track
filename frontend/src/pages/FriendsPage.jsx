@@ -39,7 +39,9 @@ function FriendsPage({ telegramId }) {
       const res = await API.getLeaderboard(telegramId);
       setLeaderboard(res.data || null);
     } catch (e) {
-      toast.error('Ошибка загрузки рейтинга');
+      const status = e.response?.status;
+      if (status && status !== 404) toast.error('Ошибка загрузки рейтинга');
+      setLeaderboard({ total_friends: 0, by_ratings: [], by_average: [] });
     } finally {
       setLbLoading(false);
     }
