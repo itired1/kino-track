@@ -1,0 +1,21 @@
+# Автоматический деплой на Render
+# Использование: New → Blueprint → выбрать этот репозиторий
+services:
+  - type: web
+    name: kino-backend
+    rootDir: backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: KINOPOISK_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: FRONTEND_URL
+        value: https://kino-frontend.vercel.app
+      - key: WEB_APP_URL
+        value: https://kino-frontend.vercel.app
+      - key: NODE_ENV
+        value: production
