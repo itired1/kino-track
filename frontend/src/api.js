@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Базовый URL API (заменить на свой при деплое)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Базовый URL API (Vercel задаёт VITE_API_URL; тут fallback на Render)
+const API_URL = import.meta.env.VITE_API_URL || 'https://kino-track.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
