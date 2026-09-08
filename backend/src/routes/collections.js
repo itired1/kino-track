@@ -7,6 +7,43 @@ const router = express.Router();
 const { db, parseJsonArray } = require('../db');
 const userService = require('../services/userService');
 
+// Автоматические полки по статусам: смотрю / посмотрел / не буду
+router.get('/status/:telegramId', (req, res) => {
+    try {
+        const user = userService.getUserByTelegramId(req.params.telegramId);
+        if (!user) return res.json({ success: true, data: [] });
+
+        const shelves = [
+            { key: 'watching', name: 'Смотрю', status: 'watching', icon: '👀' },
+            { key: 'rated', name: 'Посмотрел', status: 'rated', icon: '✅' },
+            { key: 'dropped', name: 'Не буду смотреть', status: 'dropped', icon: '🚫' }
+        ];
+
+        const data = shelves.map(s => {
+            const items = db.prepare(`
+                SELECT ur.id AS rating_id, ur.rating AS my_rating, ur.status, ur.created_at,
+                       f.id AS film_id, f.kinopoisk_id, f.name_ru, f.name_original,
+                       f.year, f.poster_url, f.rating_kp, f.duration, f.genres
+                FROM user_ratings ur
+                JOIN films f ON ur.film_id = f.id
+                WHERE ur.user_id = ? AND ur.status = ?
+                ORDER BY ur.created_at DESC
+            `).all(user.id, s.status).map(r => ({
+                ...r,
+                genres: parseJsonArray(r.genres),
+                my_rating: r.my_rating || null
+            }));
+
+            return { key: s.key, name: s.name, icon: s.icon, count: items.length, films: items };
+        });
+
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Status shelves error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Получить полки пользователя (со списком фильмов)
 router.get('/:telegramId', (req, res) => {
     try {

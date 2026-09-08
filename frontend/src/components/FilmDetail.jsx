@@ -397,10 +397,55 @@ function FilmDetail({ telegramId }) {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '17px', margin: 0 }}><Library size={18} /> Полки</h3>
+                <h3 style={{ fontSize: '17px', margin: 0 }}><Library size={18} /> В полку</h3>
                 <button onClick={() => setShowShelfPicker(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                   <X size={20} />
                 </button>
+              </div>
+
+              {/* Статус-полки */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={async () => { await addToHistory('watching'); setShowShelfPicker(false); }}
+                  style={{
+                    flex: 1, minWidth: '100px', padding: '12px 8px', background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)',
+                    fontSize: '13px', cursor: 'pointer'
+                  }}
+                >
+                  👀 Смотрю
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!selectedRating) {
+                      toast.error('Сначала поставьте оценку выше, чтобы «Посмотрел»');
+                      return;
+                    }
+                    await addToHistory('rated', selectedRating);
+                    setShowShelfPicker(false);
+                  }}
+                  style={{
+                    flex: 1, minWidth: '100px', padding: '12px 8px', background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)',
+                    fontSize: '13px', cursor: 'pointer'
+                  }}
+                >
+                  ✅ Посмотрел
+                </button>
+                <button
+                  onClick={async () => { await addToHistory('dropped'); setShowShelfPicker(false); }}
+                  style={{
+                    flex: 1, minWidth: '100px', padding: '12px 8px', background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)',
+                    fontSize: '13px', cursor: 'pointer'
+                  }}
+                >
+                  🚫 Не буду
+                </button>
+              </div>
+
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                Или свои полки:
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>

@@ -172,6 +172,11 @@ export default {
     return response.data;
   },
 
+  async getStatusShelves(telegramId) {
+    const response = await api.get(`/collections/status/${telegramId}`);
+    return response.data;
+  },
+
   async createCollection(telegramId, name) {
     const response = await api.post('/collections', { telegram_id: telegramId, name });
     return response.data;

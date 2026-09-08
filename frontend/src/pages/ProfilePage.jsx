@@ -11,6 +11,7 @@ function ProfilePage({ telegramId, userInfo, theme, onToggleTheme }) {
   const [loading, setLoading] = useState(true);
   const [collections, setCollections] = useState([]);
   const [shelvesLoaded, setShelvesLoaded] = useState(false);
+  const [statusShelves, setStatusShelves] = useState([]);
   const [newShelfName, setNewShelfName] = useState('');
 
   useEffect(() => {
@@ -20,12 +21,14 @@ function ProfilePage({ telegramId, userInfo, theme, onToggleTheme }) {
   async function loadProfile() {
     try {
       setLoading(true);
-      const [profileRes, collectionsRes] = await Promise.all([
+      const [profileRes, collectionsRes, statusRes] = await Promise.all([
         API.getProfile(telegramId),
-        API.getCollections(telegramId)
+        API.getCollections(telegramId),
+        API.getStatusShelves(telegramId)
       ]);
       setProfile(profileRes.data);
       setCollections(collectionsRes.data || []);
+      setStatusShelves(statusRes.data || []);
       setShelvesLoaded(true);
     } catch (error) {
       console.error('Profile error:', error);
@@ -350,6 +353,47 @@ function ProfilePage({ telegramId, userInfo, theme, onToggleTheme }) {
       {shelvesLoaded && (
         <div className="favorites-section">
           <h3 className="favorites-title"><Library size={18} /> Мои полки</h3>
+
+          {/* Авто-полки по статусам */}
+          {statusShelves.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              {statusShelves.map(shelf => (
+                <div key={shelf.key} className="favorite-item" style={{ flexDirection: 'column', alignItems: 'stretch', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span className="favorite-name">{shelf.icon} {shelf.name} <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>({shelf.count})</span></span>
+                  </div>
+                  {shelf.films.length === 0 ? (
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Пусто</p>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                      {shelf.films.slice(0, 12).map(f => (
+                        <Link key={f.rating_id} to={`/film/${f.film_id}`} style={{ flexShrink: 0 }}>
+                          <div style={{ position: 'relative' }}>
+                            <img
+                              src={f.poster_url || 'https://via.placeholder.com/60x90/1a1a1a/333?text=?'}
+                              alt={f.name_ru}
+                              title={f.name_ru}
+                              style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '8px' }}
+                              onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90/1a1a1a/333?text=?'; }}
+                            />
+                            {f.my_rating && (
+                              <span style={{
+                                position: 'absolute', bottom: '4px', right: '4px',
+                                background: 'var(--accent)', color: '#fff', borderRadius: '6px',
+                                fontSize: '11px', padding: '2px 5px', fontWeight: '700'
+                              }}>
+                                {f.my_rating}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <input
