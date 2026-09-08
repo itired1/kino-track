@@ -14,8 +14,8 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: FRONTEND_URL
-        value: https://kino-frontend.vercel.app
+        value: https://kino-track-1.onrender.com
       - key: WEB_APP_URL
-        value: https://kino-frontend.vercel.app
+        value: https://kino-track-1.onrender.com
       - key: NODE_ENV
         value: production

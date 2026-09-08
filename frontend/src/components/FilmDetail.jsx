@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Film, Eye, Bookmark, XCircle, Share2, Link2, Check } from 'lucide-react';
+import { ArrowLeft, Star, Film, Eye, Bookmark, XCircle, Share2, Link2, Check, MessageSquarePlus, MessageSquare, Trash2 } from 'lucide-react';
 import API from '../api';
 import toast from 'react-hot-toast';
 import { FilmDetailSkeleton } from './Skeletons';
@@ -37,10 +37,20 @@ function FilmDetail({ telegramId }) {
   const [review, setReview] = useState('');
   const [showReviewInput, setShowReviewInput] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [newReviewText, setNewReviewText] = useState('');
+  const [newReviewRating, setNewReviewRating] = useState(null);
+  const [newReviewSpoiler, setNewReviewSpoiler] = useState(false);
+  const [showNewReview, setShowNewReview] = useState(false);
 
   useEffect(() => {
     loadFilm();
   }, [id]);
+
+  useEffect(() => {
+    if (film?.id) loadReviews();
+  }, [film?.id]);
 
   async function loadFilm() {
     try {
@@ -52,6 +62,68 @@ function FilmDetail({ telegramId }) {
       navigate('/search');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadReviews() {
+    try {
+      setReviewsLoading(true);
+      const res = await API.getReviews(film.id);
+      setReviews(res.data || []);
+    } catch (e) {
+      // Тихая ошибка — рецензии не критичны
+    } finally {
+      setReviewsLoading(false);
+    }
+  }
+
+  async function submitReview() {
+    if (!newReviewText.trim()) {
+      toast.error('Напишите рецензию');
+      return;
+    }
+    try {
+      const res = await API.addReview(
+        telegramId,
+        film.kinopoisk_id,
+        newReviewRating || null,
+        newReviewText.trim(),
+        newReviewSpoiler
+      );
+      if (res.success) {
+        toast.success('Рецензия опубликована!');
+        setNewReviewText('');
+        setNewReviewRating(null);
+        setNewReviewSpoiler(false);
+        setShowNewReview(false);
+        loadReviews();
+      } else {
+        toast.error(res.error || 'Ошибка');
+      }
+    } catch (e) {
+      toast.error('Ошибка публикации');
+    }
+  }
+
+  async function removeReview(reviewId) {
+    try {
+      await API.deleteReview(reviewId);
+      toast.success('Рецензия удалена');
+      loadReviews();
+    } catch (e) {
+      toast.error('Ошибка');
+    }
+  }
+
+  function authorName(r) {
+    return `${r.first_name || 'Пользователь'}${r.last_name ? ' ' + r.last_name : ''}`;
+  }
+
+  function formatDate(d) {
+    try {
+      return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return d;
     }
   }
 
@@ -239,6 +311,170 @@ function FilmDetail({ telegramId }) {
           >
             <Link2 size={16} /> Ссылка
           </button>
+        </div>
+
+        {/* Рецензии */}
+        <div style={{ marginTop: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '600', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MessageSquare size={18} style={{ color: 'var(--accent)' }} />
+              Рецензии ({reviews.length})
+            </h2>
+            <button
+              onClick={() => setShowNewReview(true)}
+              style={{
+                background: 'var(--accent)', border: 'none', borderRadius: '10px',
+                padding: '8px 12px', cursor: 'pointer', color: '#fff', fontSize: '13px',
+                display: 'flex', alignItems: 'center', gap: '5px'
+              }}
+            >
+              <MessageSquarePlus size={14} /> Написать
+            </button>
+          </div>
+
+          {/* Форма новой рецензии */}
+          {showNewReview && (
+            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px', marginBottom: '14px' }}>
+              <textarea
+                rows="4"
+                placeholder={`Поделитесь впечатлением о "${film?.name_ru}"...`}
+                value={newReviewText}
+                onChange={(e) => setNewReviewText(e.target.value)}
+                maxLength={2000}
+                style={{
+                  width: '100%', boxSizing: 'border-box', resize: 'vertical',
+                  background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+                  borderRadius: '10px', padding: '10px', color: 'var(--text-primary)',
+                  fontSize: '14px', fontFamily: 'inherit', outline: 'none', marginBottom: '10px'
+                }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Моя оценка:</div>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setNewReviewRating(newReviewRating === n ? null : n)}
+                      style={{
+                        width: '30px', height: '30px', borderRadius: '8px', border: 'none',
+                        cursor: 'pointer', fontSize: '13px',
+                        background: newReviewRating === n ? 'var(--accent)' : 'var(--bg-tertiary)',
+                        color: newReviewRating === n ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="spoiler-check"
+                  checked={newReviewSpoiler}
+                  onChange={(e) => setNewReviewSpoiler(e.target.checked)}
+                />
+                <label htmlFor="spoiler-check" style={{ fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  Содержит спойлеры
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={submitReview}
+                  style={{
+                    flex: 1, padding: '11px', background: 'var(--accent)', border: 'none',
+                    borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+                  }}
+                >
+                  Опубликовать
+                </button>
+                <button
+                  onClick={() => setShowNewReview(false)}
+                  style={{
+                    padding: '11px 16px', background: 'var(--bg-tertiary)', border: 'none',
+                    borderRadius: '10px', color: 'var(--text-secondary)', fontSize: '14px', cursor: 'pointer'
+                  }}
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Список рецензий */}
+          {reviewsLoading ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Загрузка рецензий...</p>
+          ) : reviews.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
+              Пока нет рецензий. Будьте первым, кто поделится мнением!
+            </p>
+          ) : (
+            <div>
+              {reviews.map(r => (
+                <div
+                  key={r.id}
+                  style={{
+                    background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                    borderRadius: '14px', padding: '14px', marginBottom: '12px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '34px', height: '34px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #f50, #ff8800)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontWeight: 'bold', fontSize: '14px'
+                      }}>
+                        {(r.first_name || 'П')[0]}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+                          {authorName(r)} {r.username && <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>@{r.username}</span>}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {formatDate(r.created_at)}
+                          {r.rating && (
+                            <span style={{ color: 'var(--rating-star)', marginLeft: '6px' }}>
+                              • <Star size={10} fill="currentColor" /> {r.rating}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {r.telegram_id && String(r.telegram_id) === String(telegramId) && (
+                      <button
+                        onClick={() => removeReview(r.id)}
+                        style={{
+                          background: 'transparent', border: 'none', cursor: 'pointer',
+                          color: 'var(--text-secondary)', padding: '6px'
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
+                  {r.is_spoiler ? (
+                    <p
+                      onClick={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                      style={{
+                        margin: 0, fontSize: '14px', lineHeight: '1.6',
+                        color: 'var(--text-secondary)', fontStyle: 'italic',
+                        cursor: 'pointer'
+                      }}
+                      title="Нажмите, чтобы показать текст"
+                    >
+                      ⚠️ Спойлер — нажмите, чтобы показать...
+                    </p>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)' }}>
+                      {r.text}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

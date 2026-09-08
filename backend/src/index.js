@@ -8,6 +8,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 const app = express();
+const { startBot } = require('./bot');
 const PORT = process.env.PORT || 3000;
 
 // Подключение к БД (SQLite создаёт таблицы автоматически)
@@ -25,6 +26,8 @@ app.use('/api/ratings', require('./routes/ratings'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/recommendations', require('./routes/recommendations'));
 app.use('/api/history', require('./routes/history'));
+app.use('/api/friends', require('./routes/friends'));
+app.use('/api/reviews', require('./routes/reviews'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -45,3 +48,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен: http://localhost:${PORT}`);
 });
+
+// Запуск Telegram-бота (приветствие, кнопки)
+startBot();

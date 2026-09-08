@@ -68,12 +68,39 @@ db.exec(`
         UNIQUE(user_id, film_id)
     );
 
+    CREATE TABLE IF NOT EXISTS user_friends (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        friend_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(user_id, friend_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS film_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        film_id INTEGER NOT NULL,
+        rating INTEGER CHECK (rating >= 1 AND rating <= 10),
+        text TEXT NOT NULL,
+        is_spoiler INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id);
     CREATE INDEX IF NOT EXISTS idx_films_kinopoisk_id ON films(kinopoisk_id);
     CREATE INDEX IF NOT EXISTS idx_films_name_ru ON films(name_ru);
     CREATE INDEX IF NOT EXISTS idx_user_ratings_user_id ON user_ratings(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_ratings_film_id ON user_ratings(film_id);
     CREATE INDEX IF NOT EXISTS idx_user_ratings_status ON user_ratings(status);
+    CREATE INDEX IF NOT EXISTS idx_user_friends_user_id ON user_friends(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_friends_friend_id ON user_friends(friend_id);
+    CREATE INDEX IF NOT EXISTS idx_film_reviews_film_id ON film_reviews(film_id);
+    CREATE INDEX IF NOT EXISTS idx_film_reviews_user_id ON film_reviews(user_id);
 `);
 
 // ============================================

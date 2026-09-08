@@ -105,5 +105,47 @@ export default {
   async getPopular() {
     const response = await api.get('/search/popular');
     return response.data;
+  },
+
+  // === Друзья ===
+  async getFriends(telegramId) {
+    const response = await api.get(`/friends/${telegramId}`);
+    return response.data;
+  },
+
+  async searchFriends(telegramId, query) {
+    const response = await api.get(`/friends/${telegramId}/search`, { params: { q: query } });
+    return response.data;
+  },
+
+  async addFriend(telegramId, friendTelegramId) {
+    const response = await api.post(`/friends/${telegramId}`, { friend_telegram_id: friendTelegramId });
+    return response.data;
+  },
+
+  async removeFriend(telegramId, friendTelegramId) {
+    const response = await api.delete(`/friends/${telegramId}/${friendTelegramId}`);
+    return response.data;
+  },
+
+  async getFriendProfile(telegramId, friendTelegramId) {
+    const response = await api.get(`/friends/${telegramId}/${friendTelegramId}/profile`);
+    return response.data;
+  },
+
+  // === Рецензии ===
+  async getReviews(filmId) {
+    const response = await api.get(`/reviews/film/${filmId}`);
+    return response.data;
+  },
+
+  async addReview(telegramId, filmId, rating, text, is_spoiler = false) {
+    const response = await api.post('/reviews', { telegram_id: telegramId, film_id: filmId, rating, text, is_spoiler });
+    return response.data;
+  },
+
+  async deleteReview(id) {
+    const response = await api.delete(`/reviews/${id}`);
+    return response.data;
   }
 };

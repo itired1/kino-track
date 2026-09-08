@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Sparkles, Clock, User } from 'lucide-react';
+import { Search, Sparkles, Users, Clock, User } from 'lucide-react';
 
 function BottomNav() {
   const location = useLocation();
@@ -9,6 +9,7 @@ function BottomNav() {
   const navItems = [
     { id: 'search', label: 'Поиск', icon: Search, path: '/search' },
     { id: 'recommendations', label: 'Новинки', icon: Sparkles, path: '/recommendations' },
+    { id: 'friends', label: 'Друзья', icon: Users, path: '/friends' },
     { id: 'history', label: 'История', icon: Clock, path: '/history' },
     { id: 'profile', label: 'Профиль', icon: User, path: '/profile' }
   ];

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import SearchPage from './pages/SearchPage';
 import RecommendationsPage from './pages/RecommendationsPage';
+import FriendsPage from './pages/FriendsPage';
 import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import FilmDetail from './components/FilmDetail';
@@ -92,6 +93,7 @@ function App() {
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<AnimatedPage key={location.pathname}><SearchPage telegramId={telegramId} /></AnimatedPage>} />
           <Route path="/recommendations" element={<AnimatedPage key={location.pathname}><RecommendationsPage telegramId={telegramId} /></AnimatedPage>} />
+          <Route path="/friends" element={<AnimatedPage key={location.pathname}><FriendsPage telegramId={telegramId} /></AnimatedPage>} />
           <Route path="/profile" element={<AnimatedPage key={location.pathname}><ProfilePage telegramId={telegramId} userInfo={userInfo} /></AnimatedPage>} />
           <Route path="/history" element={<AnimatedPage key={location.pathname}><HistoryPage telegramId={telegramId} /></AnimatedPage>} />
           <Route path="/film/:id" element={<AnimatedPage key={location.pathname}><FilmDetail telegramId={telegramId} /></AnimatedPage>} />

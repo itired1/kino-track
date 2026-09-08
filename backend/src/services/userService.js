@@ -194,6 +194,78 @@ function getTopActors(userId, limit = 3) {
         .slice(0, limit);
 }
 
+// ============================================
+// Друзья
+// ============================================
+
+// Добавление друга (по telegram_id друга)
+function addFriend(userId, friendTelegramId) {
+    if (!friendTelegramId) return { error: 'Нужно указать друга' };
+
+    const friend = getUserByTelegramId(friendTelegramId);
+    if (!friend) return { error: 'Пользователь не найден' };
+    if (friend.id === userId) return { error: 'Нельзя добавить самого себя' };
+
+    const existing = db.prepare('SELECT id FROM user_friends WHERE user_id = ? AND friend_id = ?').get(userId, friend.id);
+    if (existing) return { error: 'Уже в друзьях' };
+
+    db.prepare('INSERT INTO user_friends (user_id, friend_id) VALUES (?, ?)').run(userId, friend.id);
+    return { success: true, friend: publicUser(friend) };
+}
+
+// Удаление друга
+function removeFriend(userId, friendTelegramId) {
+    const friend = getUserByTelegramId(friendTelegramId);
+    if (!friend) return { error: 'Пользователь не найден' };
+
+    db.prepare('DELETE FROM user_friends WHERE user_id = ? AND friend_id = ?').run(userId, friend.id);
+    return { success: true };
+}
+
+// Список друзей с их статистикой
+function getFriends(userId) {
+    const rows = db.prepare(`
+        SELECT u.id, u.telegram_id, u.username, u.first_name, u.last_name
+        FROM user_friends uf
+        JOIN users u ON uf.friend_id = u.id
+        WHERE uf.user_id = ?
+        ORDER BY u.first_name
+    `).all(userId);
+
+    return rows.map(u => {
+        const stats = getUserStats(u.id);
+        return {
+            ...publicUser(u),
+            total_ratings: Number(stats.total_ratings || 0),
+            average_rating: Number(stats.average_rating || 0)
+        };
+    });
+}
+
+// Поиск пользователей по нику/имени
+function searchUsers(query, excludeUserId) {
+    const q = `%${query}%`;
+    const rows = db.prepare(`
+        SELECT * FROM users
+        WHERE id != ?
+          AND (username LIKE ? OR first_name LIKE ? OR last_name LIKE ?)
+        ORDER BY first_name
+        LIMIT 20
+    `).all(excludeUserId, q, q, q);
+    return rows.map(publicUser);
+}
+
+// Публичные данные пользователя
+function publicUser(u) {
+    return {
+        id: u.id,
+        telegram_id: u.telegram_id,
+        username: u.username,
+        first_name: u.first_name,
+        last_name: u.last_name
+    };
+}
+
 module.exports = {
     findOrCreateUser,
     getUserByTelegramId,
@@ -202,5 +274,9 @@ module.exports = {
     getRecentRatings,
     getTopGenres,
     getTopDirectors,
-    getTopActors
+    getTopActors,
+    addFriend,
+    removeFriend,
+    getFriends,
+    searchUsers
 };
