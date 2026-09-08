@@ -9,7 +9,11 @@ const helmet = require('helmet');
 
 const app = express();
 const { startBot } = require('./bot');
+const { restoreDbIfMissing, startBackupLoop } = require('./dbBackup');
 const PORT = process.env.PORT || 3000;
+
+// Восстановление БД из Git-бэкапа (если настроено и файла нет) ДО открытия
+restoreDbIfMissing();
 
 // Подключение к БД (SQLite создаёт таблицы автоматически)
 const db = require('./db');
@@ -49,6 +53,9 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен: http://localhost:${PORT}`);
 });
+
+// Периодический Git-бэкап БД
+startBackupLoop(db);
 
 // Запуск Telegram-бота (приветствие, кнопки)
 startBot();
