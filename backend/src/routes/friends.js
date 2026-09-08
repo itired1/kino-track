@@ -155,4 +155,90 @@ router.get('/:telegramId/leaderboard', (req, res) => {
     }
 });
 
+// Активность друзей (что они оценили за последние N дней)
+router.get('/:telegramId/activity', (req, res) => {
+    try {
+        const me = userService.getUserByTelegramId(req.params.telegramId);
+        if (!me) return res.json({ success: true, data: [] });
+
+        const days = parseInt(req.query.days, 10) || 14;
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+        const rows = db.prepare(`
+            SELECT ur.rating, ur.created_at,
+                   f.id AS film_db_id, f.kinopoisk_id, f.name_ru, f.name_original,
+                   f.year, f.poster_url, f.rating_kp, f.genres,
+                   u.telegram_id AS friend_telegram_id, u.first_name, u.last_name, u.username
+            FROM user_ratings ur
+            JOIN user_friends uf ON uf.friend_id = ur.user_id AND uf.user_id = ?
+            JOIN users u ON u.id = ur.user_id
+            JOIN films f ON f.id = ur.film_id
+            WHERE ur.created_at >= ?
+            ORDER BY ur.created_at DESC
+            LIMIT 20
+        `).all(me.id, since);
+
+        const data = rows.map(r => ({
+            friend: {
+                telegram_id: r.friend_telegram_id,
+                first_name: r.first_name,
+                last_name: r.last_name,
+                username: r.username
+            },
+            rating: r.rating,
+            created_at: r.created_at,
+            film: {
+                id: r.film_db_id,
+                kinopoisk_id: r.kinopoisk_id,
+                name_ru: r.name_ru,
+                name_original: r.name_original,
+                year: r.year,
+                poster_url: r.poster_url,
+                rating_kp: r.rating_kp,
+                genres: parseJsonArray(r.genres)
+            }
+        }));
+
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Friends activity error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Как друзья оценили конкретный фильм
+router.get('/:telegramId/film/:kinopoiskId/ratings', (req, res) => {
+    try {
+        const me = userService.getUserByTelegramId(req.params.telegramId);
+        if (!me) return res.json({ success: true, data: { count: 0, average: 0, friends: [] } });
+
+        const film = db.prepare('SELECT id FROM films WHERE kinopoisk_id = ?').get(req.params.kinopoiskId);
+        if (!film) return res.json({ success: true, data: { count: 0, average: 0, friends: [] } });
+
+        const rows = db.prepare(`
+            SELECT ur.rating, u.telegram_id, u.first_name, u.last_name, u.username
+            FROM user_ratings ur
+            JOIN user_friends uf ON uf.friend_id = ur.user_id AND uf.user_id = ?
+            JOIN users u ON u.id = ur.user_id
+            WHERE ur.film_id = ?
+            ORDER BY ur.rating DESC
+        `).all(me.id, film.id);
+
+        const count = rows.length;
+        const average = count ? Math.round((rows.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
+        const friends = rows.map(r => ({
+            telegram_id: r.telegram_id,
+            first_name: r.first_name,
+            last_name: r.last_name,
+            username: r.username,
+            rating: r.rating
+        }));
+
+        res.json({ success: true, data: { count, average, friends } });
+    } catch (error) {
+        console.error('Film friends ratings error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

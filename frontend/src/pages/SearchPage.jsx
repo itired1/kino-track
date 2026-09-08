@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Film, Calendar, Star, X, Shuffle } from 'lucide-react';
+import { Search, Film, Calendar, Star, X, Shuffle, Users } from 'lucide-react';
 import API from '../api';
 import toast from 'react-hot-toast';
 import { FilmListSkeleton } from '../components/Skeletons';
@@ -12,7 +12,17 @@ function SearchPage({ telegramId }) {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [randomizing, setRandomizing] = useState(false);
+  const [activity, setActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Активность друзей за 14 дней
+    API.getFriendsActivity(telegramId, 14)
+      .then(res => setActivity(res.data || []))
+      .catch(() => {})
+      .finally(() => setActivityLoading(false));
+  }, [telegramId]);
 
   async function handleSearch(e) {
     e.preventDefault();
@@ -106,6 +116,81 @@ function SearchPage({ telegramId }) {
           {randomizing ? 'Подбираем фильм...' : 'Что посмотреть? Случайный фильм'}
         </button>
       </div>
+
+      {/* Смотрят ваши друзья */}
+      {!loading && !searched && activityLoading && activity.length === 0 && (
+        <div style={{ marginTop: '16px' }}>
+          <div className="skeleton skeleton-line w-40 pulse" style={{ height: '18px', marginBottom: '12px' }}></div>
+          <div className="skeleton skeleton-card" style={{ height: '120px', borderRadius: '16px' }}></div>
+        </div>
+      )}
+
+      {!loading && !searched && activity.length > 0 && (
+        <div style={{ marginTop: '20px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <Users size={18} style={{ color: 'var(--accent)' }} />
+            <h2 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>
+              Смотрят ваши друзья
+            </h2>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>за 14 дней</span>
+          </div>
+          <div>
+            {activity.slice(0, 8).map((item, i) => (
+              <Link
+                key={i}
+                to={`/film/${item.film.id}`}
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div
+                  className={`film-card stagger-${(i % 5) + 1}`}
+                  style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px', marginBottom: '10px' }}
+                >
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <img
+                      src={item.film.poster_url || 'https://via.placeholder.com/50x75/1a1a1a/333?text=?'}
+                      alt={item.film.name_ru}
+                      style={{ width: '50px', height: '75px', objectFit: 'cover', borderRadius: '8px' }}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/50x75/1a1a1a/333?text=?'; }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.film.name_ru}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {item.film.year && <span>{item.film.year}</span>}
+                      {item.film.name_original && <span> • {item.film.name_original}</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                      <div style={{
+                        width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                        background: 'linear-gradient(135deg, #f50, #ff8800)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: '10px', fontWeight: '700'
+                      }}>
+                        {(item.friend.first_name || '?')[0]}
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        {item.friend.first_name} {item.friend.last_name || ''} поставил
+                      </span>
+                      <span style={{
+                        fontSize: '12px', fontWeight: '700',
+                        background: 'var(--accent)', color: '#fff',
+                        borderRadius: '6px', padding: '1px 6px'
+                      }}>
+                        {item.rating}
+                      </span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                        {new Date(item.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading && <FilmListSkeleton count={4} />}
 

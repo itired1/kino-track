@@ -161,6 +161,16 @@ export default {
     return response.data;
   },
 
+  async getFriendsActivity(telegramId, days = 14) {
+    const response = await api.get(`/friends/${telegramId}/activity`, { params: { days } });
+    return response.data;
+  },
+
+  async getFilmFriendsRatings(telegramId, kinopoiskId) {
+    const response = await api.get(`/friends/${telegramId}/film/${kinopoiskId}/ratings`);
+    return response.data;
+  },
+
   // === Полки ===
   async getCollections(telegramId) {
     const response = await api.get(`/collections/${telegramId}`);

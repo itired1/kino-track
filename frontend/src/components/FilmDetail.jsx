@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Film, Eye, Bookmark, XCircle, Share2, Link2, Check, MessageSquarePlus, MessageSquare, Trash2, Library, Plus, X } from 'lucide-react';
+import { ArrowLeft, Star, Film, Eye, Bookmark, XCircle, Share2, Link2, Check, MessageSquarePlus, MessageSquare, Trash2, Library, Plus, X, Users } from 'lucide-react';
 import API from '../api';
 import toast from 'react-hot-toast';
 import { FilmDetailSkeleton } from './Skeletons';
@@ -47,6 +47,15 @@ function FilmDetail({ telegramId }) {
   const [collections, setCollections] = useState([]);
   const [shelvesLoading, setShelvesLoading] = useState(false);
   const [newShelfName, setNewShelfName] = useState('');
+  const [friendRatings, setFriendRatings] = useState(null);
+
+  useEffect(() => {
+    if (film?.kinopoisk_id && telegramId) {
+      API.getFilmFriendsRatings(telegramId, film.kinopoisk_id)
+        .then(res => setFriendRatings(res.data || null))
+        .catch(() => setFriendRatings(null));
+    }
+  }, [film?.kinopoisk_id, film?.id]);
 
   async function loadCollections() {
     try {
@@ -497,6 +506,51 @@ function FilmDetail({ telegramId }) {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Друзья об этом фильме */}
+        {friendRatings && friendRatings.count > 0 && (
+          <div style={{
+            background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+            borderRadius: '16px', padding: '14px', marginTop: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <Users size={16} style={{ color: 'var(--accent)' }} />
+              <span style={{ fontSize: '14px', fontWeight: '600' }}>
+                Друзья об этом фильме
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: '20px', fontWeight: '700',
+                display: 'flex', alignItems: 'center', gap: '6px'
+              }}>
+                <Star size={18} fill="var(--rating-star)" color="var(--rating-star)" />
+                {friendRatings.average}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {friendRatings.friends.slice(0, 5).map((f, i) => (
+                  <div
+                    key={f.telegram_id}
+                    title={`${f.first_name} ${f.last_name || ''} — ${f.rating}`}
+                    style={{
+                      width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+                      background: 'linear-gradient(135deg, #f50, #ff8800)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', fontWeight: '700', fontSize: '12px',
+                      border: '2px solid var(--bg-secondary)',
+                      marginLeft: i === 0 ? 0 : '-8px'
+                    }}
+                  >
+                    {(f.first_name || '?')[0]}
+                  </div>
+                ))}
+              </div>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                {friendRatings.count} {friendRatings.count % 10 === 1 && friendRatings.count % 100 !== 11 ? 'друг оценил' : 'друзей оценили'}
+              </span>
             </div>
           </div>
         )}
